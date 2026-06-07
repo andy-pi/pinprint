@@ -7,6 +7,8 @@ Think of it like a bed of nails — each nail can be raised or lowered independe
 When all the nails are set to the right heights, the surface they form matches the
 shape of the original 3D scan.
 
+![Pin array visualisation](pins_3d.png)
+
 ---
 
 ## The two parts
