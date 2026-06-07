@@ -82,23 +82,43 @@ Each height is a number between **0.0** (pin fully retracted) and **100.0**
 (pin fully extended). The value represents a percentage of the pin's total
 travel range.
 
-**Reading it in Python** (for a machine controller):
+**Reading it in C++ (for a machine controller):**
 
-```python
-import numpy as np
+```cpp
+#include <fstream>
+#include <vector>
+#include <cstdint>
 
-with open("pins.bin", "rb") as f:
-    rows, cols = np.frombuffer(f.read(8), dtype=np.int32)
-    heights    = np.frombuffer(f.read(), dtype=np.float32).reshape(rows, cols)
+int main() {
+    std::ifstream file("pins.bin", std::ios::binary);
 
-# heights[row, col] gives the target height for the pin at that position
-# e.g. heights[10, 25] is the pin in row 10, column 25
+    int32_t rows, cols;
+    file.read(reinterpret_cast<char*>(&rows), 4);
+    file.read(reinterpret_cast<char*>(&cols), 4);
+
+    std::vector<float> heights(rows * cols);
+    file.read(reinterpret_cast<char*>(heights.data()), rows * cols * sizeof(float));
+
+    // heights[row * cols + col] gives the target height for the pin at (row, col)
+}
 ```
 
 To convert a height value to a real-world distance, multiply by your pin's
 physical travel range. For example, if each pin can travel 20 mm:
 
-```python
-travel_mm = 20.0
-actual_height_mm = heights[row, col] / 100.0 * travel_mm
+```cpp
+float travel_mm        = 20.0f;
+float actual_height_mm = heights[row * cols + col] / 100.0f * travel_mm;
+```
+
+To send all pins to a machine:
+
+```cpp
+for (int row = 0; row < rows; ++row) {
+    for (int col = 0; col < cols; ++col) {
+        int   pin_id     = row * cols + col;
+        float pin_height = heights[pin_id];
+        // send pin_id and pin_height to your hardware here
+    }
+}
 ```
